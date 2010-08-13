@@ -17,7 +17,7 @@ bin_PROGRAMS = \
 	btool \
 	bidentify \
 	bjavaloader \
-	bvncrelay \
+	brawsocket \
 	bjvmdebug \
 	bdptest \
 	bjdwp \
@@ -55,8 +55,8 @@ bidentify_LDADD = ../src/libbarry.la $(LIBUSB_LIBS) -lpthread
 bjavaloader_SOURCES = bjavaloader.cc
 bjavaloader_LDADD = ../src/libbarry.la $(LIBUSB_LIBS) -lpthread
 
-bvncrelay_SOURCES = bvncrelay.cc
-bvncrelay_LDADD = ../src/libbarry.la $(LIBUSB_LIBS) -lpthread
+brawsocket_SOURCES = brawsocket.cc
+brawsocket_LDADD = ../src/libbarry.la $(LIBUSB_LIBS) -lpthread
 
 bjvmdebug_SOURCES = bjvmdebug.cc
 bjvmdebug_LDADD = ../src/libbarry.la $(LIBUSB_LIBS) -lpthread
