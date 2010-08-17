@@ -154,7 +154,21 @@ Controller::~Controller()
 // Tells device which mode is desired, and returns the suggested
 // socket ID to use for that mode.
 //
-uint16_t Controller::SelectMode(ModeType mode)
+  uint16_t Controller::SelectMode(ModeType mode)
+{
+  return SelectMode(mode, NULL);
+}
+//
+// Tells device which mode is desired, and returns the suggested
+// socket ID to use for that mode.
+//
+// If explicitModeName is not NULL then it will be used as the mode name.
+// Otherwise the default mode name for the given mode will be used.
+// It should be a nul terminated string if it is provided.
+//
+// The RawSocket mode requires an explicitModeName to be specified.
+//
+  uint16_t Controller::SelectMode(ModeType mode, const char *explicitModeName)
 {
 	// select mode
 	Protocol::Packet packet;
@@ -166,36 +180,43 @@ uint16_t Controller::SelectMode(ModeType mode)
 	memset(packet.u.socket.u.mode.name, 0, sizeof(packet.u.socket.u.mode.name));
 
 	char *modeName = (char *) packet.u.socket.u.mode.name;
-	switch( mode )
+	
+	if(explicitModeName)
 	{
-	case Bypass:
-		strcpy(modeName, "RIM Bypass");
-		break;
-
-	case Desktop:
-		strcpy(modeName, "RIM Desktop");
-		break;
-
-	case JavaLoader:
-		strcpy(modeName, "RIM_JavaLoader");
-		break;
-
-	case JVMDebug:
-		strcpy(modeName, "RIM_JVMDebug");
-		break;
-
-	case UsbSerData:
-		strcpy(modeName, "RIM_UsbSerData");
-		break;
-
-	case UsbSerCtrl:
-		strcpy(modeName, "RIM_UsbSerCtrl");
-		break;
-
-	default:
-		throw std::logic_error("Controller: Invalid mode in SelectMode");
-		break;
+	  strcpy(modeName, explicitModeName);
 	}
+	else
+	  // No modeName given, use the default
+	  switch( mode )
+	  {
+	  case Bypass:
+	      strcpy(modeName, "RIM Bypass");
+	      break;
+
+	  case Desktop:
+	      strcpy(modeName, "RIM Desktop");
+	      break;
+
+	  case JavaLoader:
+	      strcpy(modeName, "RIM_JavaLoader");
+	      break;
+
+	  case JVMDebug:
+	      strcpy(modeName, "RIM_JVMDebug");
+	      break;
+
+	  case UsbSerData:
+	      strcpy(modeName, "RIM_UsbSerData");
+	      break;
+
+	  case UsbSerCtrl:
+	      strcpy(modeName, "RIM_UsbSerCtrl");
+	      break;
+
+	  default:
+	      throw std::logic_error("Controller: Invalid mode in SelectMode");
+	      break;
+	  }
 
 	// send mode command before we open, as a default socket is socket 0
 	Data command(&packet, btohs(packet.size));
@@ -207,9 +228,11 @@ uint16_t Controller::SelectMode(ModeType mode)
 		// get the data socket number
 		// indicates the socket number that
 		// should be used below in the Open() call
-		Protocol::CheckSize(response, SB_MODE_PACKET_RESPONSE_SIZE);
 		MAKE_PACKET(modepack, response);
-		if( modepack->command != SB_COMMAND_MODE_SELECTED ) {
+		if (modepack->command == SB_COMMAND_MODE_NOT_SELECTED) {
+		        throw Error("Controller: requested mode not supported");
+		}
+		if (modepack->command != SB_COMMAND_MODE_SELECTED) {
 			eeout(command, response);
 			throw Error("Controller: mode not selected");
 		}
@@ -223,7 +246,6 @@ uint16_t Controller::SelectMode(ModeType mode)
 			m_zero.Receive(response);
 			m_zero.HideSequencePacket(true);
 		}
-
 		// return the socket that the device is expecting us to use
 		return btohs(modepack->u.socket.socket);
 	}
