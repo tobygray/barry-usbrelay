@@ -80,7 +80,8 @@ BarryEnvironment::BarryEnvironment(OSyncPluginInfo *info):
 	m_CalendarSync(info, "calendar"),
 	m_ContactsSync(info, "contacts"),
 	m_JournalSync(info, "note"),
-	m_TodoSync(info, "todo")
+	m_TodoSync(info, "todo"),
+	m_NeedsReconnect(false)
 {
 }
 
@@ -113,18 +114,18 @@ void BarryEnvironment::DoConnect()
 	}
 
 	if( m_ContactsSync.m_Sync ) {
-		m_ContactsSync.m_dbId = m_pDesktop->GetDBID(Barry::Contact::GetDBName());
 		m_ContactsSync.m_dbName = Barry::Contact::GetDBName();
+		m_ContactsSync.m_dbId = m_pDesktop->GetDBID(Barry::Contact::GetDBName());
 	}
 
 	if( m_JournalSync.m_Sync ) {
-		m_JournalSync.m_dbId = m_pDesktop->GetDBID(Barry::Memo::GetDBName());
 		m_JournalSync.m_dbName = Barry::Memo::GetDBName();
+		m_JournalSync.m_dbId = m_pDesktop->GetDBID(Barry::Memo::GetDBName());
 	}
 
 	if( m_TodoSync.m_Sync ) {
-		m_TodoSync.m_dbId = m_pDesktop->GetDBID(Barry::Task::GetDBName());
 		m_TodoSync.m_dbName = Barry::Task::GetDBName();
+		m_TodoSync.m_dbId = m_pDesktop->GetDBID(Barry::Task::GetDBName());
 	}
 }
 
@@ -185,6 +186,8 @@ void BarryEnvironment::Disconnect()
 
 	delete m_pCon;
 	m_pCon = 0;
+
+	m_NeedsReconnect = false;
 }
 
 bool BarryEnvironment::isConnected()
@@ -193,6 +196,19 @@ bool BarryEnvironment::isConnected()
 		return true;
 
 	return false;
+}
+
+void BarryEnvironment::ReconnectForDirtyFlags()
+{
+	if( m_NeedsReconnect ) {
+		// Reconnect resets the m_NeedsReconnect via Disconnect
+		Reconnect();
+	}
+}
+
+void BarryEnvironment::RequireDirtyReconnect()
+{
+	m_NeedsReconnect = true;
 }
 
 void BarryEnvironment::ClearDirtyFlags(Barry::RecordStateTable &table,
