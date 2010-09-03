@@ -51,6 +51,8 @@ public:
 	virtual void ChannelError(std::string msg) = 0;
 	// Called when the channel has been asked to close by the other side
 	virtual void ChannelClose() = 0;
+
+	virtual ~RawChannelDataCallback() {};
 };
 
 //
